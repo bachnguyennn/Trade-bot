@@ -148,13 +148,17 @@ A measured outcome for one event, symbol, and window (Gold layer).
 | `run_id` | str | |
 | `strategy` | StrategyName | |
 | `config` | dict | Full strategy and execution configuration |
+| `created_at` | datetime | |
 | `period_start`, `period_end` | datetime | |
+| `initial_equity` | float | Positive |
 | `metrics` | BacktestMetrics | cumulative return, Sharpe, Sortino, max drawdown, win rate, profit factor, turnover, trade count |
-| `benchmark_metrics` | BacktestMetrics | Buy-and-hold of the benchmark over the same period |
+| `benchmark_symbol` | str | |
+| `benchmark_metrics` | BacktestMetrics or null | Buy-and-hold of the benchmark over the same period |
 | `by_category` | dict[str, BacktestMetrics] | |
-| `equity_curve` | list[EquityPoint] | `{ts, equity}` |
+| `equity_curve`, `benchmark_curve` | list[EquityPoint] | `{ts, equity}` |
 | `trades` | list[BacktestTrade] | Entry, exit, costs, exit reason |
-| `no_trade_count` | int | |
+| `signal_count`, `no_trade_count` | int | |
+| `no_trade_reasons` | dict[str, int] | Why signals were not traded |
 | `assumptions` | list[str] | Costs, slippage, latency, data quality, known biases |
 | `data_quality` | DataQuality | |
 
@@ -165,16 +169,18 @@ A measured outcome for one event, symbol, and window (Gold layer).
 | `order_id` | str | |
 | `client_order_id` | str | Equal to `signal_id`; unique |
 | `signal_id` | str | |
-| `symbol`, `side`, `qty` | | `qty > 0` |
+| `symbol`, `side`, `qty` | | `qty > 0`, except that a `blocked` order may be 0 when it was refused before sizing |
 | `status` | OrderStatus | |
 | `broker` | str | `simulator` or `alpaca-paper` |
+| `created_at` | datetime | |
 | `submitted_at`, `filled_at` | datetime or null | |
 | `filled_price` | float or null | |
 | `reject_reason` | str or null | Required for `rejected` and `blocked` |
 | `history` | list[OrderStatusChange] | `{status, at, note}` |
 
-State transitions: `pending -> submitted -> filled`; `pending -> blocked` (kill switch, loss
-limit, market closed, duplicate); `submitted -> rejected`; `submitted -> cancelled`.
+State transitions: `pending -> submitted -> filled`; `pending -> blocked` (no-trade signal,
+kill switch, market closed, loss limit, no price); `pending -> rejected` (broker refusal or
+unreachable); `submitted -> rejected`; `submitted -> cancelled`.
 No transition leaves `filled`, `rejected`, `cancelled`, or `blocked`.
 
 ## Storage Layout
@@ -186,7 +192,9 @@ No transition leaves `filled`, `rejected`, `cancelled`, or `blocked`.
 | Silver | `data/silver/candles/<interval>/<symbol>.parquet` | `StockCandle` rows |
 | Gold | `data/gold/events.parquet` | `MarketEvent` rows |
 | Gold | `data/gold/features.parquet` | `MarketFeature` rows |
-| Gold | `data/gold/predictions.parquet` | `ModelPrediction` rows |
+| Gold | `data/gold/predictions.parquet` | Out-of-sample `ModelPrediction` rows |
+| Gold | `data/gold/signals.parquet` | Latest `TradingSignal` rows per strategy |
+| Silver | `data/silver/post_rejections.parquet` | Rejected raw records with reasons |
 | Reports | `data/reports/event_study/*.json`, `data/reports/models/*.json`, `data/reports/backtests/*.json` | Reproducible outputs |
 | Models | `data/models/<name>/<version>/` | Fitted model and metadata |
 | State | `data/state/orders.sqlite` | Paper orders and risk state |

@@ -1,0 +1,54 @@
+# Local environment: API on http://localhost:8000, dashboard on http://localhost:5173.
+#   docker compose -f infra/docker-compose.yml up --build
+#
+# Everything here is free to run. No paid service is required. Optional Alpaca keys are
+# read from the environment (or a `.env` file next to this command) and never baked into
+# an image.
+name: tradebot
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    environment:
+      TRADEBOT_DATA_DIR: /data
+      TRADEBOT_MARKET_PROVIDER: ${TRADEBOT_MARKET_PROVIDER:-auto}
+      TRADEBOT_ALPACA_API_KEY: ${TRADEBOT_ALPACA_API_KEY:-}
+      TRADEBOT_ALPACA_API_SECRET: ${TRADEBOT_ALPACA_API_SECRET:-}
+      # `simulator` or `alpaca-paper`. There is no live-trading value.
+      TRADEBOT_BROKER: ${TRADEBOT_BROKER:-simulator}
+      TRADEBOT_ALLOW_UNVERIFIED_SOURCES: ${TRADEBOT_ALLOW_UNVERIFIED_SOURCES:-false}
+      TRADEBOT_CORS_ORIGINS: '["http://localhost:5173"]'
+    volumes:
+      - tradebot-data:/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.frontend
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:5173:80"
+    restart: unless-stopped
+
+  # One-off pipeline run:  docker compose -f infra/docker-compose.yml run --rm pipeline
+  pipeline:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    profiles: ["tools"]
+    environment:
+      TRADEBOT_DATA_DIR: /data
+      TRADEBOT_ALPACA_API_KEY: ${TRADEBOT_ALPACA_API_KEY:-}
+      TRADEBOT_ALPACA_API_SECRET: ${TRADEBOT_ALPACA_API_SECRET:-}
+    volumes:
+      - tradebot-data:/data
+    command: ["python", "-m", "src.cli", "pipeline", "run"]
+
+volumes:
+  tradebot-data:
