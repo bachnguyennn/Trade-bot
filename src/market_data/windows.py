@@ -60,6 +60,18 @@ class BarSeries:
 
 
 @dataclass(frozen=True)
+class PathBar:
+    """One bar on the path between entry and exit, used to check stop-losses."""
+
+    start: datetime
+    end: datetime
+    open: float
+    high: float
+    low: float
+    close: float
+
+
+@dataclass(frozen=True)
 class Measurement:
     entry_ts: datetime
     exit_ts: datetime
@@ -69,6 +81,7 @@ class Measurement:
     volume_ratio: float | None
     shifted_to_open: bool
     quality: DataQuality
+    path: tuple[PathBar, ...] = ()
 
     @property
     def ret(self) -> float:
@@ -135,6 +148,16 @@ class WindowCalculator:
             volume_ratio=self._volume_ratio(daily, session, index),
             shifted_to_open=not self._calendar.is_open(anchor),
             quality=DataQuality(daily.quality[index]),
+            path=(
+                PathBar(
+                    session.open,
+                    session.close,
+                    open_price,
+                    daily.high[index],
+                    daily.low[index],
+                    daily.close[index],
+                ),
+            ),
         )
 
     def _volume_ratio(self, daily: BarSeries, session: Session, index: int) -> float | None:
@@ -222,6 +245,7 @@ class WindowCalculator:
 
         prices = [bars.open[first]]
         qualities: list[DataQuality] = []
+        path: list[PathBar] = []
         expected = entry_ts
         index = first
         while index < len(bars) and bars.ts[index] < target:
@@ -230,6 +254,16 @@ class WindowCalculator:
             prices.append(bars.close[index])
             qualities.append(DataQuality(bars.quality[index]))
             expected = min(bars.ts[index] + step, session.close)
+            path.append(
+                PathBar(
+                    bars.ts[index],
+                    expected,
+                    bars.open[index],
+                    bars.high[index],
+                    bars.low[index],
+                    bars.close[index],
+                )
+            )
             index += 1
         if expected != target:
             return "candles do not cover the window exactly"
@@ -244,6 +278,7 @@ class WindowCalculator:
             volume_ratio=None,
             shifted_to_open=shifted,
             quality=DataQuality.lowest(qualities),
+            path=tuple(path),
         )
 
     # -- features ---------------------------------------------------------------------

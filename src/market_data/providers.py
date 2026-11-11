@@ -97,8 +97,8 @@ class YFinanceProvider:
 
         rows: list[dict[str, Any]] = []
         errors: dict[str, str] = {}
-        for offset in range(0, len(symbols), self._batch_size):
-            batch = symbols[offset : offset + self._batch_size]
+
+        def download(batch: list[str], threads: bool) -> None:
             try:
                 data = yf.download(
                     tickers=batch,
@@ -108,13 +108,13 @@ class YFinanceProvider:
                     auto_adjust=True,
                     prepost=False,
                     group_by="ticker",
-                    threads=True,
+                    threads=threads,
                     progress=False,
                 )
             except Exception as exc:  # noqa: BLE001 - provider failures are reported per symbol
                 for symbol in batch:
                     errors[symbol] = f"download failed: {exc!r}"
-                continue
+                return
             for symbol in batch:
                 try:
                     frame = data[symbol] if symbol in data.columns.get_level_values(0) else None
@@ -123,7 +123,14 @@ class YFinanceProvider:
                 if frame is None or frame.dropna(how="all").empty:
                     errors[symbol] = "no data returned"
                     continue
+                errors.pop(symbol, None)
                 rows.extend(self._rows(symbol, interval, frame.dropna(how="any")))
+
+        for offset in range(0, len(symbols), self._batch_size):
+            download(symbols[offset : offset + self._batch_size], threads=True)
+        # Parallel downloads occasionally fail for one symbol; retry those once, one at a time.
+        for symbol in list(errors):
+            download([symbol], threads=False)
         candles = _rows_to_frame(rows)
         candles = drop_unfinished_bars(candles, interval, self._calendar, utc_now())
         return ProviderResult(candles=candles, errors=errors)
