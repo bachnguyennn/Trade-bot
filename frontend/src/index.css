@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-surface text-ink font-sans antialiased;
+  margin: 0;
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-surface-border bg-surface-raised;
+  }
+  .card-title {
+    @apply text-xs font-semibold uppercase tracking-wide text-ink-muted;
+  }
+  .table-head {
+    @apply px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted;
+  }
+  .table-cell {
+    @apply px-3 py-2 text-sm;
+  }
+  .num {
+    @apply font-mono tabular-nums;
+  }
+  .btn {
+    @apply rounded border border-surface-border bg-surface px-3 py-1.5 text-sm text-ink
+      hover:border-accent disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .input {
+    @apply rounded border border-surface-border bg-surface px-2 py-1.5 text-sm text-ink
+      focus:border-accent focus:outline-none;
+  }
+}
