@@ -11,6 +11,7 @@ area kept to its own directories and integrated through the shared contracts.
 | Lint and format (`ruff`) | Clean |
 | Types (`mypy src`) | Clean, 64 files |
 | Frontend type check, tests, build | Clean; 15 tests passed |
+| GitHub Actions CI | Passing: backend, frontend, Compose validation |
 | Real-data pipeline | Ran end to end; see `docs/RESEARCH_RESULTS.md` |
 
 ## By area
@@ -88,9 +89,12 @@ area kept to its own directories and integrated through the shared contracts.
 - **Owns**: `tests/`, `.github/workflows/`, `infra/`
 - **Done**: unit, integration, and contract tests; research-integrity guards; CI workflow;
   Dockerfiles and Compose; security notes.
-- **Not verified**: the CI workflow has not run yet (it runs on GitHub after a push);
-  Docker was not available locally.
-- **Next**: confirm the first CI run is green.
+- **Verified**: CI passes on GitHub (Linux). The first workflow version was invalid
+  (a job-level condition used a function that is only allowed in steps), so runs before
+  the fix show as failed without having executed any job.
+- **Not verified**: the Docker images were not built or run (no Docker locally; CI only
+  validates the Compose file).
+- **Next**: build the images in CI.
 
 ## Quickstart scenarios
 

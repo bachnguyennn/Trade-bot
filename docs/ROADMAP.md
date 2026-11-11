@@ -10,7 +10,7 @@ Status as of 2026-11-11. "Done" means implemented and covered by passing tests.
 | Architecture documented | Done |
 | Shared models defined | Done: eight contracts, validated |
 | Local environment starts | Done: API and dashboard run locally |
-| CI runs | Workflow added (`.github/workflows/ci.yml`); first run happens on GitHub after push |
+| CI runs | Done: backend, frontend, and Compose validation pass on GitHub Actions |
 | Initial tests pass | Done |
 
 ## Phase 2: Historical research MVP — done
@@ -74,5 +74,5 @@ heavier models should follow better inputs, not precede them. See "Next" below.
 - The universe is curated today; delisted names are mostly absent.
 - No borrow costs, market impact, or partial fills in backtests.
 - The simulator fills at the last stored close, not a live quote.
-- Docker files are provided and checked in CI, but were not run on the development machine,
-  which has no Docker.
+- Docker files are provided and the Compose file is validated in CI, but the images were
+  not built or run: the development machine has no Docker.
