@@ -299,6 +299,39 @@ def run_event_study(
     )
 
 
+def study_from_store(
+    paths: DataPaths,
+    settings: Settings,
+    store: CandleStore,
+    benchmark: str,
+    windows: list[EventWindow] | None = None,
+    save: bool = True,
+) -> EventStudyReport:
+    """Run the study on stored events and features, with baselines from stored candles.
+
+    Every caller (CLI, API, tests) goes through here, so they all produce the same report
+    for the same data.
+    """
+    from src.pipelines.events import load_events
+    from src.pipelines.features import load_features
+
+    events = load_events(paths)
+    features = load_features(paths)
+    baselines: Baselines | None = None
+    if events:
+        baselines = daily_baselines(
+            store,
+            benchmark,
+            sorted({f.symbol for f in features}),
+            min(e.available_at for e in events),
+            max(e.available_at for e in events),
+        )
+    report = run_event_study(events, features, settings, windows, baselines)
+    if save and events:
+        save_event_study(paths, report)
+    return report
+
+
 def save_event_study(paths: DataPaths, report: EventStudyReport) -> None:
     """Store the report. A report with identical results keeps its first file."""
     path = paths.reports_dir("event_study") / f"{report.report_id}.json"

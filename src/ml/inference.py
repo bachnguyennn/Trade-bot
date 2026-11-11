@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from src.contracts import MarketEvent, ModelPrediction
 from src.core.settings import Settings
@@ -55,9 +55,16 @@ class InferenceService:
         return latest_version(self._paths)
 
     def predict_event(
-        self, event: MarketEvent, expected_version: str | None = None
+        self,
+        event: MarketEvent,
+        expected_version: str | None = None,
+        predicted_at: datetime | None = None,
     ) -> list[ModelPrediction]:
-        """Predictions for every affected symbol of an event."""
+        """Predictions for every affected symbol of an event.
+
+        `predicted_at` records when the prediction was actually made. Without it, the
+        event's availability time plus the decision latency is used (historical replay).
+        """
         bundle = self.bundle(expected_version)
         samples = [
             Sample(
@@ -73,7 +80,11 @@ class InferenceService:
             )
             for symbol in event.symbols
         ]
-        return to_predictions(bundle, samples, self._latency)
+        predictions = to_predictions(bundle, samples, self._latency)
+        if predicted_at is None:
+            return predictions
+        stamp = max(predicted_at, event.available_at)
+        return [p.model_copy(update={"predicted_at": stamp}) for p in predictions]
 
     def predict_text(
         self,

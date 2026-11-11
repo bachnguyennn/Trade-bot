@@ -143,25 +143,12 @@ def build_features_command() -> None:
 
 
 def _run_event_study(ctx: Context, windows: list[EventWindow] | None = None) -> BaseModel:
-    from src.backtesting.event_study import daily_baselines, run_event_study, save_event_study
+    from src.backtesting.event_study import study_from_store
     from src.market_data.store import CandleStore
-    from src.pipelines.events import load_events
-    from src.pipelines.features import load_features
 
-    events = load_events(ctx.paths)
-    features = load_features(ctx.paths)
-    baselines = None
-    if events:
-        baselines = daily_baselines(
-            CandleStore(ctx.paths),
-            ctx.universe.benchmark,
-            sorted({f.symbol for f in features}),
-            min(e.available_at for e in events),
-            max(e.available_at for e in events),
-        )
-    report = run_event_study(events, features, ctx.settings, windows, baselines)
-    save_event_study(ctx.paths, report)
-    return report
+    return study_from_store(
+        ctx.paths, ctx.settings, CandleStore(ctx.paths), ctx.universe.benchmark, windows
+    )
 
 
 @research_app.command("event-study")
@@ -314,7 +301,7 @@ def serve_command(
     """Start the API."""
     import uvicorn
 
-    uvicorn.run("src.api.app:create_app", host=host, port=port, factory=True)
+    uvicorn.run("src.api.app:create_app_from_env", host=host, port=port, factory=True)
 
 
 @app.command("status")

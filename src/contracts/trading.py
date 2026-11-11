@@ -101,7 +101,9 @@ class PaperOrder(Contract):
     signal_id: str = Field(min_length=1)
     symbol: str = Field(min_length=1)
     side: OrderSide
-    qty: float = Field(gt=0)
+    # Positive for any order sent to a broker. A blocked order may be 0 when it was
+    # refused before it could be sized (for example, no price was available).
+    qty: float = Field(ge=0)
     status: OrderStatus
     broker: BrokerName
     created_at: UtcDatetime
@@ -113,6 +115,8 @@ class PaperOrder(Contract):
 
     @model_validator(mode="after")
     def _check_state(self) -> Self:
+        if self.qty <= 0 and self.status is not OrderStatus.BLOCKED:
+            raise ValueError("qty must be positive unless the order is blocked")
         if self.status in {OrderStatus.REJECTED, OrderStatus.BLOCKED} and not self.reject_reason:
             raise ValueError("reject_reason is required for rejected and blocked orders")
         if self.status is OrderStatus.FILLED and (
