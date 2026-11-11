@@ -1,0 +1,71 @@
+[
+  {
+    "id": "900000000000000001",
+    "created_at": "2025-03-03T14:05:00.000Z",
+    "content": "<p>SYNTHETIC TEST FIXTURE. We will place a 25% TARIFF on all steel and aluminum coming in from China, starting next week!</p>",
+    "url": "https://example.invalid/fixture/900000000000000001",
+    "media": [],
+    "replies_count": 1,
+    "reblogs_count": 2,
+    "favourites_count": 3
+  },
+  {
+    "id": "900000000000000001",
+    "created_at": "2025-03-03T14:05:00.000Z",
+    "content": "<p>SYNTHETIC TEST FIXTURE. We will place a 25% TARIFF on all steel and aluminum coming in from China, starting next week!</p>",
+    "url": "https://example.invalid/fixture/900000000000000001",
+    "media": [],
+    "replies_count": 5,
+    "reblogs_count": 6,
+    "favourites_count": 7
+  },
+  {
+    "id": "900000000000000002",
+    "created_at": "2025-03-03T14:40:00.000Z",
+    "content": "<p>SYNTHETIC TEST FIXTURE. Tariffs on China will make American steel GREAT. Nucor and our steel workers will win big.</p>",
+    "url": "https://example.invalid/fixture/900000000000000002",
+    "media": []
+  },
+  {
+    "id": "900000000000000003",
+    "created_at": "2025-03-04T01:15:00.000Z",
+    "content": "<p>SYNTHETIC TEST FIXTURE. DRILL, BABY, DRILL! We are opening up oil and natural gas production like never before. Exxon and Chevron are ready.</p>",
+    "url": "https://example.invalid/fixture/900000000000000003",
+    "media": []
+  },
+  {
+    "id": "900000000000000004",
+    "created_at": "2025-03-05T16:30:00.000Z",
+    "content": "RT @SomeAccount: SYNTHETIC TEST FIXTURE. Great rally tonight, thank you!",
+    "url": "https://example.invalid/fixture/900000000000000004",
+    "media": []
+  },
+  {
+    "id": "900000000000000005",
+    "created_at": "2025-03-06T12:00:00.000Z",
+    "content": "",
+    "url": "https://example.invalid/fixture/900000000000000005",
+    "media": ["https://example.invalid/fixture/media/1.jpg"]
+  },
+  {
+    "id": "900000000000000006",
+    "created_at": null,
+    "content": "<p>SYNTHETIC TEST FIXTURE. This record has no publication time.</p>",
+    "url": "https://example.invalid/fixture/900000000000000006",
+    "media": []
+  },
+  {
+    "id": "900000000000000007",
+    "created_at": "2025-03-08T15:00:00.000Z",
+    "content": "<p>SYNTHETIC TEST FIXTURE. Happy birthday to a wonderful friend. Have a great day!</p>",
+    "url": "https://example.invalid/fixture/900000000000000007",
+    "media": []
+  },
+  {
+    "id": "900000000000000008",
+    "created_at": "2025-03-10T13:45:00.000Z",
+    "content": "<p>SYNTHETIC TEST FIXTURE. The Federal Reserve must cut interest rates NOW. Powell is too late. Also, new export controls on Nvidia chips to China.</p>",
+    "url": "https://example.invalid/fixture/900000000000000008",
+    "media": []
+  }
+]
