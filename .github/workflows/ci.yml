@@ -30,7 +30,6 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('frontend/package.json') != '' }}
     defaults:
       run:
         working-directory: frontend
@@ -40,7 +39,7 @@ jobs:
         with:
           node-version: "20"
       - name: Install
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Type check
         run: npm run typecheck
       - name: Tests
@@ -50,7 +49,6 @@ jobs:
 
   compose:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('infra/docker-compose.yml') != '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Validate Compose file
