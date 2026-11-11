@@ -13,7 +13,12 @@ from typing import Any
 from src.core.timeutils import parse_timestamp
 
 _WHITESPACE = re.compile(r"\s+")
-_REPOST = re.compile(r"^RT\s*:?\s*@(?P<account>[A-Za-z0-9_.]+)", re.IGNORECASE)
+# Two forms appear in the archive: "RT @account ..." and
+# "RT: https://truthsocial.com/users/account/statuses/123...".
+_REPOST = re.compile(
+    r"^RT\s*:?\s*(?:@|https?://truthsocial\.com/users/)(?P<account>[A-Za-z0-9_.]+)",
+    re.IGNORECASE,
+)
 _BLOCK_TAGS = {"p", "br", "div", "li", "blockquote"}
 
 
