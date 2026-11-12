@@ -151,6 +151,66 @@ def _run_event_study(ctx: Context, windows: list[EventWindow] | None = None) -> 
     )
 
 
+def _label_sheet(ctx: Context) -> Path:
+    return ctx.paths.root / "labels" / "label_sheet.csv"
+
+
+@research_app.command("label-sample")
+def label_sample_command(
+    relevant: Annotated[int, typer.Option(help="Posts the rules call relevant.")] = 200,
+    other: Annotated[int, typer.Option(help="Posts the rules reject.")] = 100,
+    seed: Annotated[int, typer.Option(help="Sampling seed.")] = 20261112,
+    force: Annotated[
+        bool, typer.Option(help="Overwrite an existing sheet and its labels.")
+    ] = False,
+) -> None:
+    """Write a blind, stratified sample of posts to label by hand. See docs/LABELLING.md."""
+    from src.ml.labels import build_sample, write_sheet
+    from src.pipelines.events import EventBuilder
+    from src.pipelines.posts import load_posts
+
+    ctx = Context()
+    builder = EventBuilder(ctx.universe, ctx.settings)
+    posts, meta = build_sample(load_posts(ctx.paths), builder, relevant, other, seed)
+    sheet = _label_sheet(ctx)
+    try:
+        write_sheet(posts, meta, sheet, force)
+    except FileExistsError as exc:
+        _fail(f"{exc}. Pass --force to replace it.")
+    _emit({"sheet": str(sheet), "population": meta.population, "sampled": meta.sampled})
+
+
+@research_app.command("label-eval")
+def label_eval_command() -> None:
+    """Score the rules against hand labels and test reactions to specific posts."""
+    from datetime import timedelta
+
+    from src.market_data.store import CandleStore
+    from src.market_data.windows import WindowCalculator
+    from src.ml.labels import evaluate_labels, read_meta, read_sheet
+    from src.pipelines.features import stored_quality
+    from src.pipelines.posts import load_posts
+
+    ctx = Context()
+    sheet = _label_sheet(ctx)
+    if not sheet.exists():
+        _fail(f"{sheet} not found. Run `research label-sample` first.")
+    read = read_sheet(sheet, ctx.universe)
+    store = CandleStore(ctx.paths)
+    calendar = ctx.calendar
+    evaluation = evaluate_labels(
+        read,
+        read_meta(sheet),
+        {p.post_id: p for p in load_posts(ctx.paths)},
+        WindowCalculator(store, calendar, ctx.universe, stored_quality(store)),
+        calendar,
+        ctx.universe.benchmark,
+        timedelta(seconds=ctx.settings.assumed_latency_seconds),
+        timedelta(seconds=ctx.settings.decision_latency_seconds),
+    )
+    _emit(evaluation)
+
+
 @research_app.command("reaction-size")
 def reaction_size_command() -> None:
     """Compare the size of moves after posts with the same symbols on nearby quiet days."""
