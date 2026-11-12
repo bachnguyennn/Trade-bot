@@ -64,3 +64,16 @@ def test_normalize_rejects_missing_id_and_time() -> None:
     assert isinstance(rejected, Rejection)
     assert "publication time" in rejected.reason
     assert isinstance(normalize_record({"id": "7", "created_at": "yesterday"}, "a"), Rejection)
+
+
+def test_html_to_text_repairs_mis_decoded_utf8() -> None:
+    # Latin-1 form: the continuation bytes arrive as C1 control characters.
+    assert html_to_text("Reaganâ\u0080\u0099s Speech") == "Reagan’s Speech"
+    # Windows-1252 form: the same bytes arrive as printable characters.
+    assert html_to_text("â€œFRAUDâ€\u009d") == "“FRAUD”"
+    assert html_to_text("ðŸš¨ alert") == "\U0001f6a8 alert"
+
+
+def test_html_to_text_leaves_correct_text_alone() -> None:
+    for text in ["café à la carte", "5° and 10£", "naïve ’quoted’"]:
+        assert html_to_text(text) == text

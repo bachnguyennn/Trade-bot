@@ -22,6 +22,50 @@ _REPOST = re.compile(
 _BLOCK_TAGS = {"p", "br", "div", "li", "blockquote"}
 
 
+# The archive contains text whose UTF-8 bytes were once read as single-byte characters, so
+# a curly apostrophe arrives as three characters ("â", then two from the 0x80-0xBF range).
+# A candidate is a UTF-8 lead byte followed by its continuation bytes, each seen either as
+# its Latin-1 character or as its Windows-1252 character.
+_CP1252_SPECIALS = "".join(
+    bytes([b]).decode("cp1252")
+    for b in range(0x80, 0xA0)
+    if b not in {0x81, 0x8D, 0x8F, 0x90, 0x9D}
+)
+_CONTINUATION = f"[\u0080-¿{re.escape(_CP1252_SPECIALS)}]"
+_MOJIBAKE = re.compile(f"[Â-ß]{_CONTINUATION}|[à-ï]{_CONTINUATION}{{2}}|[ð-ô]{_CONTINUATION}{{3}}")
+
+
+def _mojibake_bytes(segment: str) -> bytes | None:
+    out = bytearray()
+    for char in segment:
+        if ord(char) < 256:
+            out.append(ord(char))
+            continue
+        try:
+            out.extend(char.encode("cp1252"))
+        except UnicodeEncodeError:
+            return None
+    return bytes(out)
+
+
+def repair_mojibake(text: str) -> str:
+    """Restore characters whose UTF-8 bytes were mis-read as single-byte text.
+
+    Only sequences that form valid UTF-8 are replaced; everything else is left as it is.
+    """
+
+    def fix(match: re.Match[str]) -> str:
+        raw = _mojibake_bytes(match.group(0))
+        if raw is None:
+            return match.group(0)
+        try:
+            return raw.decode("utf-8")
+        except UnicodeDecodeError:
+            return match.group(0)
+
+    return _MOJIBAKE.sub(fix, text)
+
+
 class _TextExtractor(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -46,7 +90,7 @@ def html_to_text(content: str) -> str:
     parser = _TextExtractor()
     parser.feed(content)
     parser.close()
-    text = html.unescape("".join(parser.parts))
+    text = repair_mojibake(html.unescape("".join(parser.parts)))
     return _WHITESPACE.sub(" ", text).strip()
 
 
