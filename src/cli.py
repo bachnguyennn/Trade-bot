@@ -151,6 +151,21 @@ def _run_event_study(ctx: Context, windows: list[EventWindow] | None = None) -> 
     )
 
 
+@research_app.command("reaction-size")
+def reaction_size_command() -> None:
+    """Compare the size of moves after posts with the same symbols on nearby quiet days."""
+    from src.backtesting.reaction_size import reaction_size_from_store
+    from src.market_data.store import CandleStore
+    from src.market_data.windows import WindowCalculator
+    from src.pipelines.features import stored_quality
+
+    ctx = Context()
+    store = CandleStore(ctx.paths)
+    calendar = ctx.calendar
+    calculator = WindowCalculator(store, calendar, ctx.universe, stored_quality(store))
+    _emit(reaction_size_from_store(ctx.paths, calculator, calendar, ctx.universe.benchmark))
+
+
 @research_app.command("event-study")
 def event_study_command(
     window: Annotated[list[EventWindow] | None, typer.Option(help="Repeatable.")] = None,
